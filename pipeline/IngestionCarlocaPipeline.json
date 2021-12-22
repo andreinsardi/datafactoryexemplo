@@ -61,23 +61,15 @@
 									"type": "MySqlSource"
 								},
 								"sink": {
-									"type": "ParquetSink",
+									"type": "JsonSink",
 									"storeSettings": {
 										"type": "AzureBlobFSWriteSettings"
 									},
 									"formatSettings": {
-										"type": "ParquetWriteSettings"
+										"type": "JsonWriteSettings"
 									}
 								},
-								"enableStaging": false,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"enableStaging": false
 							},
 							"inputs": [
 								{
@@ -93,7 +85,7 @@
 							],
 							"outputs": [
 								{
-									"referenceName": "Parquet1",
+									"referenceName": "Json1",
 									"type": "DatasetReference",
 									"parameters": {
 										"container": "ingestion",
@@ -102,7 +94,7 @@
 											"type": "Expression"
 										},
 										"file": {
-											"value": "@concat(item().table_name, '.parquet')",
+											"value": "@concat(item().table_name, '.json')",
 											"type": "Expression"
 										}
 									}

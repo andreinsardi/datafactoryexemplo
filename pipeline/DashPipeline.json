@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Data flowDash",
+				"name": "Data flowDash2",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "dataflowJoinDash",
+						"referenceName": "dataflow2",
 						"type": "DataFlowReference"
 					},
 					"compute": {

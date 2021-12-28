@@ -1,0 +1,49 @@
+{
+	"name": "dataflow2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ParquetRideEstimative",
+						"type": "DatasetReference"
+					},
+					"name": "RideEstimative"
+				},
+				{
+					"dataset": {
+						"referenceName": "ParquetRide",
+						"type": "DatasetReference"
+					},
+					"name": "Ride"
+				},
+				{
+					"dataset": {
+						"referenceName": "ParquetReceipt",
+						"type": "DatasetReference"
+					},
+					"name": "Receipt"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ParquetOrgDash",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Join1"
+				},
+				{
+					"name": "Join2"
+				}
+			],
+			"script": "source(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> RideEstimative\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Ride\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Receipt\nRideEstimative, Ride join(RideEstimative@RideID == Ride@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join1\nJoin1, Receipt join(RideEstimative@RideID == Receipt@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join2\nJoin2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\taluguel_id as integer,\n\t\tdata_de_aluguel as timestamp,\n\t\tinventario_id as integer,\n\t\tcliente_id as integer,\n\t\tdata_de_devolucao as timestamp,\n\t\tfuncionario_id as byte,\n\t\tultima_atualizacao as timestamp\n\t),\n\tformat: 'parquet',\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> sink1"
+		}
+	}
+}

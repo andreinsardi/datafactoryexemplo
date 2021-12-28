@@ -1,0 +1,12 @@
+{
+	"name": "AzureSqlWDriver",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqDriver",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	}
+}

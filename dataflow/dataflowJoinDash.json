@@ -1,0 +1,49 @@
+{
+	"name": "dataflowJoinDash",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ParquetRide",
+						"type": "DatasetReference"
+					},
+					"name": "Ride"
+				},
+				{
+					"dataset": {
+						"referenceName": "ParquetReceipt",
+						"type": "DatasetReference"
+					},
+					"name": "Receipt"
+				},
+				{
+					"dataset": {
+						"referenceName": "ParquetRideEstimative",
+						"type": "DatasetReference"
+					},
+					"name": "RideEstimative"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ParquetDashOrganization",
+						"type": "DatasetReference"
+					},
+					"name": "OrganizationDash"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Join1"
+				},
+				{
+					"name": "Join2"
+				}
+			],
+			"script": "parameters{\n\tfileName as string\n}\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Ride\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Receipt\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> RideEstimative\nRide, Receipt join(Ride@RideID == Receipt@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join1\nJoin1, RideEstimative join(Ride@RideID == RideEstimative@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join2\nJoin2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\tpartitionFileNames:['dash.parquet'],\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> OrganizationDash"
+		}
+	}
+}

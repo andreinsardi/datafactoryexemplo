@@ -1,0 +1,62 @@
+{
+	"name": "ParquetRideEstimative",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "RideEstimative.parquet",
+				"folderPath": "wdriver",
+				"fileSystem": "ingestion"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "RideEstimativeID",
+				"type": "INT32"
+			},
+			{
+				"name": "RideID",
+				"type": "INT32"
+			},
+			{
+				"name": "ProductID",
+				"type": "UTF8"
+			},
+			{
+				"name": "WaitingTime",
+				"type": "INT32"
+			},
+			{
+				"name": "Price",
+				"type": "DECIMAL",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "FareID",
+				"type": "UTF8"
+			},
+			{
+				"name": "Selected",
+				"type": "BOOLEAN"
+			},
+			{
+				"name": "RideReasonSelectedEstimativeID",
+				"type": "INT32"
+			},
+			{
+				"name": "Fee",
+				"type": "DECIMAL",
+				"precision": 18,
+				"scale": 2
+			}
+		]
+	}
+}

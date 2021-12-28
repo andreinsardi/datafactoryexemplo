@@ -19,6 +19,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MySql01'"
 		},
+		"AzureSqlServerDatabase_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSqlServerDatabase'"
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://saexemplo.dfs.core.windows.net"
@@ -55,6 +59,9 @@
 					},
 					"AzureMySql01_connectionString": {
 						"value": "[parameters('AzureMySql01_connectionString')]"
+					},
+					"AzureSqlServerDatabase_connectionString": {
+						"value": "[parameters('AzureSqlServerDatabase_connectionString')]"
 					},
 					"MySql01_connectionString": {
 						"value": "[parameters('MySql01_connectionString')]"

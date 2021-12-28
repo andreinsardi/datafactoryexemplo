@@ -14,6 +14,9 @@
 		"MySql01_connectionString": {
 			"value": ""
 		},
+		"AzureSqlServerDatabase_connectionString": {
+			"value": ""
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"value": "https://saexemplo.dfs.core.windows.net"
 		}

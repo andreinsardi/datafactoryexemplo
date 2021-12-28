@@ -15,13 +15,17 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureMySql01'"
 		},
-		"MySql01_connectionString": {
+		"AzureSqDriver_connectionString": {
 			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MySql01'"
+			"metadata": "Secure string for 'connectionString' of 'AzureSqDriver'"
 		},
 		"AzureSqlServerDatabase_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureSqlServerDatabase'"
+		},
+		"MySql01_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MySql01'"
 		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
@@ -32,6 +36,184 @@
 		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/DashPipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flowDash2",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"RideEstimative": {},
+									"Ride": {},
+									"Receipt": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DriverPipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "ListTableWDriver",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('ListTableWDriver').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "CopyWDriver",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "AzureSqlWDriverGeneric",
+											"type": "DatasetReference",
+											"parameters": {
+												"tableName": {
+													"value": "@item().Name",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ParquetWDriver",
+											"type": "DatasetReference",
+											"parameters": {
+												"tableName": {
+													"value": "@concat(item().Name, '.parquet')",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "ListTableWDriver",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "select Name from sys.objects\nwhere type ='U'",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "AzureSqlWDriver",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/AzureSqlWDriver')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlWDriverGeneric')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetWDriver')]"
+			]
+		},
 		{
 			"name": "[concat(parameters('factoryName'), '/IngestionCarlocaPipeline')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
@@ -287,6 +469,135 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/UberPipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "ListTableUber",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('ListTableUber').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "CopyUber",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "AzureSqlTableUber",
+											"type": "DatasetReference",
+											"parameters": {
+												"tableName": {
+													"value": "@item().Name",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ParquetUber",
+											"type": "DatasetReference",
+											"parameters": {
+												"tableName": {
+													"value": "@concat(item().Name, '.parquet')",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "ListTableUber",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "select Name from sys.objects\nwhere type ='U'",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "AzureSqlListTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/AzureSqlListTable')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTableUber')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetUber')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/AzureMySqlTable1')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -330,6 +641,103 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/AzureMySql01')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlListTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlServerDatabase",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlServerDatabase')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTableUber')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlServerDatabase",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"tableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "dbo",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().tableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlServerDatabase')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlWDriver')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqDriver",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqDriver')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlWDriverGeneric')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqDriver",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"tableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().tableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqDriver')]"
 			]
 		},
 		{
@@ -470,257 +878,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobFS",
-				"typeProperties": {
-					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
-					"accountKey": {
-						"type": "SecureString",
-						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
-					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/AzureMySql01')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureMySql",
-				"typeProperties": {
-					"connectionString": "[parameters('AzureMySql01_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MySql01')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "MySql",
-				"typeProperties": {
-					"connectionString": "[parameters('MySql01_connectionString')]"
-				},
-				"connectVia": {
-					"referenceName": "integrationRuntime01",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime01')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/integrationRuntime01')]",
-			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "SelfHosted",
-				"typeProperties": {}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/UberPipeline')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "ForEach1",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "ListTableUber",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('ListTableUber').output.value",
-								"type": "Expression"
-							},
-							"activities": [
-								{
-									"name": "CopyUber",
-									"type": "Copy",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "AzureSqlSource",
-											"queryTimeout": "02:00:00",
-											"partitionOption": "None"
-										},
-										"sink": {
-											"type": "ParquetSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
-											},
-											"formatSettings": {
-												"type": "ParquetWriteSettings"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "AzureSqlTableUber",
-											"type": "DatasetReference",
-											"parameters": {
-												"tableName": {
-													"value": "@item().Name",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "ParquetUber",
-											"type": "DatasetReference",
-											"parameters": {
-												"tableName": {
-													"value": "@concat(item().Name, '.parquet')",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								}
-							]
-						}
-					},
-					{
-						"name": "ListTableUber",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": "select Name from sys.objects\nwhere type ='U'",
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "AzureSqlListTable",
-								"type": "DatasetReference",
-								"parameters": {}
-							},
-							"firstRowOnly": false
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/AzureSqlListTable')]",
-				"[concat(variables('factoryId'), '/datasets/AzureSqlTableUber')]",
-				"[concat(variables('factoryId'), '/datasets/ParquetUber')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/AzureSqlServerDatabase')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"connectionString": "[parameters('AzureSqlServerDatabase_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/AzureSqlListTable')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureSqlServerDatabase",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureSqlServerDatabase')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/AzureSqlTableUber')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureSqlServerDatabase",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"tableName": {
-						"type": "string"
-					}
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": {
-						"value": "dbo",
-						"type": "Expression"
-					},
-					"table": {
-						"value": "@dataset().tableName",
-						"type": "Expression"
-					}
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureSqlServerDatabase')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/Parquet2')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -738,6 +895,261 @@
 					"compressionCodec": "snappy"
 				},
 				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ParquetOrgDash')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "dash",
+						"fileSystem": "organization"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "aluguel_id",
+						"type": "INT32"
+					},
+					{
+						"name": "data_de_aluguel",
+						"type": "INT96"
+					},
+					{
+						"name": "inventario_id",
+						"type": "INT32"
+					},
+					{
+						"name": "cliente_id",
+						"type": "INT32"
+					},
+					{
+						"name": "data_de_devolucao",
+						"type": "INT96"
+					},
+					{
+						"name": "funcionario_id",
+						"type": "INT_8"
+					},
+					{
+						"name": "ultima_atualizacao",
+						"type": "INT96"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ParquetReceipt')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "Receipt.parquet",
+						"folderPath": "wdriver",
+						"fileSystem": "ingestion"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "RideEstimativeID",
+						"type": "INT32"
+					},
+					{
+						"name": "RideID",
+						"type": "INT32"
+					},
+					{
+						"name": "ProductID",
+						"type": "UTF8"
+					},
+					{
+						"name": "WaitingTime",
+						"type": "INT32"
+					},
+					{
+						"name": "Price",
+						"type": "DECIMAL",
+						"precision": 18,
+						"scale": 2
+					},
+					{
+						"name": "FareID",
+						"type": "UTF8"
+					},
+					{
+						"name": "Selected",
+						"type": "BOOLEAN"
+					},
+					{
+						"name": "RideReasonSelectedEstimativeID",
+						"type": "INT32"
+					},
+					{
+						"name": "Fee",
+						"type": "DECIMAL",
+						"precision": 18,
+						"scale": 2
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ParquetRide')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "Receipt.parquet",
+						"folderPath": "wdriver",
+						"fileSystem": "ingestion"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "RideEstimativeID",
+						"type": "INT32"
+					},
+					{
+						"name": "RideID",
+						"type": "INT32"
+					},
+					{
+						"name": "ProductID",
+						"type": "UTF8"
+					},
+					{
+						"name": "WaitingTime",
+						"type": "INT32"
+					},
+					{
+						"name": "Price",
+						"type": "DECIMAL",
+						"precision": 18,
+						"scale": 2
+					},
+					{
+						"name": "FareID",
+						"type": "UTF8"
+					},
+					{
+						"name": "Selected",
+						"type": "BOOLEAN"
+					},
+					{
+						"name": "RideReasonSelectedEstimativeID",
+						"type": "INT32"
+					},
+					{
+						"name": "Fee",
+						"type": "DECIMAL",
+						"precision": 18,
+						"scale": 2
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ParquetRideEstimative')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "RideEstimative.parquet",
+						"folderPath": "wdriver",
+						"fileSystem": "ingestion"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "RideEstimativeID",
+						"type": "INT32"
+					},
+					{
+						"name": "RideID",
+						"type": "INT32"
+					},
+					{
+						"name": "ProductID",
+						"type": "UTF8"
+					},
+					{
+						"name": "WaitingTime",
+						"type": "INT32"
+					},
+					{
+						"name": "Price",
+						"type": "DECIMAL",
+						"precision": 18,
+						"scale": 2
+					},
+					{
+						"name": "FareID",
+						"type": "UTF8"
+					},
+					{
+						"name": "Selected",
+						"type": "BOOLEAN"
+					},
+					{
+						"name": "RideReasonSelectedEstimativeID",
+						"type": "INT32"
+					},
+					{
+						"name": "Fee",
+						"type": "DECIMAL",
+						"precision": 18,
+						"scale": 2
+					}
+				]
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
@@ -830,6 +1242,268 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ParquetWDriver')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"tableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().tableName",
+							"type": "Expression"
+						},
+						"folderPath": "wdriver",
+						"fileSystem": "ingestion"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "aluguel_id",
+						"type": "INT32"
+					},
+					{
+						"name": "data_de_aluguel",
+						"type": "INT96"
+					},
+					{
+						"name": "inventario_id",
+						"type": "INT32"
+					},
+					{
+						"name": "cliente_id",
+						"type": "INT32"
+					},
+					{
+						"name": "data_de_devolucao",
+						"type": "INT96"
+					},
+					{
+						"name": "funcionario_id",
+						"type": "INT_8"
+					},
+					{
+						"name": "ultima_atualizacao",
+						"type": "INT96"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureMySql01')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureMySql",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureMySql01_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqDriver')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSqDriver_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlServerDatabase')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSqlServerDatabase_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MySql01')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "MySql",
+				"typeProperties": {
+					"connectionString": "[parameters('MySql01_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "integrationRuntime01",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime01')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/integrationRuntime01')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ParquetRideEstimative",
+								"type": "DatasetReference"
+							},
+							"name": "RideEstimative"
+						},
+						{
+							"dataset": {
+								"referenceName": "ParquetRide",
+								"type": "DatasetReference"
+							},
+							"name": "Ride"
+						},
+						{
+							"dataset": {
+								"referenceName": "ParquetReceipt",
+								"type": "DatasetReference"
+							},
+							"name": "Receipt"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ParquetOrgDash",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "Join1"
+						},
+						{
+							"name": "Join2"
+						}
+					],
+					"script": "source(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> RideEstimative\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Ride\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Receipt\nRideEstimative, Ride join(RideEstimative@RideID == Ride@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join1\nJoin1, Receipt join(RideEstimative@RideID == Receipt@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join2\nJoin2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\taluguel_id as integer,\n\t\tdata_de_aluguel as timestamp,\n\t\tinventario_id as integer,\n\t\tcliente_id as integer,\n\t\tdata_de_devolucao as timestamp,\n\t\tfuncionario_id as byte,\n\t\tultima_atualizacao as timestamp\n\t),\n\tformat: 'parquet',\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> sink1"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ParquetRideEstimative')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetRide')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetReceipt')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetOrgDash')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflowJoinDash')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ParquetRide",
+								"type": "DatasetReference"
+							},
+							"name": "Ride"
+						},
+						{
+							"dataset": {
+								"referenceName": "ParquetReceipt",
+								"type": "DatasetReference"
+							},
+							"name": "Receipt"
+						},
+						{
+							"dataset": {
+								"referenceName": "ParquetRideEstimative",
+								"type": "DatasetReference"
+							},
+							"name": "RideEstimative"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ParquetOrgDash",
+								"type": "DatasetReference"
+							},
+							"name": "OrganizationDash"
+						}
+					],
+					"transformations": [
+						{
+							"name": "Join1"
+						},
+						{
+							"name": "Join2"
+						}
+					],
+					"script": "parameters{\n\tfileName as string\n}\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Ride\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> Receipt\nsource(output(\n\t\tRideEstimativeID as integer,\n\t\tRideID as integer,\n\t\tProductID as string,\n\t\tWaitingTime as integer,\n\t\tPrice as decimal(18,2),\n\t\tFareID as string,\n\t\tSelected as boolean,\n\t\tRideReasonSelectedEstimativeID as integer,\n\t\tFee as decimal(18,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> RideEstimative\nRide, Receipt join(Ride@RideID == Receipt@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join1\nJoin1, RideEstimative join(Ride@RideID == RideEstimative@RideID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join2\nJoin2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\taluguel_id as integer,\n\t\tdata_de_aluguel as timestamp,\n\t\tinventario_id as integer,\n\t\tcliente_id as integer,\n\t\tdata_de_devolucao as timestamp,\n\t\tfuncionario_id as byte,\n\t\tultima_atualizacao as timestamp\n\t),\n\tformat: 'parquet',\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> OrganizationDash"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ParquetRide')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetReceipt')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetRideEstimative')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetOrgDash')]"
 			]
 		}
 	]

@@ -15,13 +15,17 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureMySql01'"
 		},
-		"MySql01_connectionString": {
+		"AzureSqDriver_connectionString": {
 			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MySql01'"
+			"metadata": "Secure string for 'connectionString' of 'AzureSqDriver'"
 		},
 		"AzureSqlServerDatabase_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureSqlServerDatabase'"
+		},
+		"MySql01_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MySql01'"
 		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
@@ -60,11 +64,11 @@
 					"AzureMySql01_connectionString": {
 						"value": "[parameters('AzureMySql01_connectionString')]"
 					},
+					"AzureSqDriver_connectionString": {
+						"value": "[parameters('AzureSqDriver_connectionString')]"
+					},
 					"AzureSqlServerDatabase_connectionString": {
 						"value": "[parameters('AzureSqlServerDatabase_connectionString')]"
-					},
-					"MySql01_connectionString": {
-						"value": "[parameters('MySql01_connectionString')]"
 					},
 					"AzureDataLakeStorage1_properties_typeProperties_url": {
 						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
@@ -72,6 +76,29 @@
 				}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "dfc-ingestion_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"MySql01_connectionString": {
+						"value": "[parameters('MySql01_connectionString')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'dfc-ingestion_ArmTemplate_0')]"
+			]
 		}
 	]
 }

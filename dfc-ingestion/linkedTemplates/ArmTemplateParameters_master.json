@@ -11,10 +11,13 @@
 		"AzureMySql01_connectionString": {
 			"value": ""
 		},
-		"MySql01_connectionString": {
+		"AzureSqDriver_connectionString": {
 			"value": ""
 		},
 		"AzureSqlServerDatabase_connectionString": {
+			"value": ""
+		},
+		"MySql01_connectionString": {
 			"value": ""
 		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {

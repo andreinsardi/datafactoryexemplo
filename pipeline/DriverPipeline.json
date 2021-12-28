@@ -7,7 +7,7 @@
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "ListTableUber",
+						"activity": "ListTableWDriver",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -16,12 +16,12 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('ListTableUber').output.value",
+						"value": "@activity('ListTableWDriver').output.value",
 						"type": "Expression"
 					},
 					"activities": [
 						{
-							"name": "CopyUber",
+							"name": "CopyWDriver",
 							"type": "Copy",
 							"dependsOn": [],
 							"policy": {
@@ -59,7 +59,7 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "AzureSqlTableUber",
+									"referenceName": "AzureSqlWDriverGeneric",
 									"type": "DatasetReference",
 									"parameters": {
 										"tableName": {
@@ -86,7 +86,7 @@
 				}
 			},
 			{
-				"name": "ListTableUber",
+				"name": "ListTableWDriver",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {

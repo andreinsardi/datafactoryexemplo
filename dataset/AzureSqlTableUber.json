@@ -1,0 +1,21 @@
+{
+	"name": "AzureSqlTableUber",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlServerDatabase",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"tableName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "__EFMigrationsHistory"
+		}
+	}
+}

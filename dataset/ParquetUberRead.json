@@ -1,0 +1,50 @@
+{
+	"name": "ParquetUberRead",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "ResponseTime.parquet",
+				"folderPath": "uber",
+				"fileSystem": "ingestion"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "ResponseTimeID",
+				"type": "INT32"
+			},
+			{
+				"name": "RequestLocationID",
+				"type": "INT32"
+			},
+			{
+				"name": "localized_display_name",
+				"type": "UTF8"
+			},
+			{
+				"name": "estimate",
+				"type": "INT32"
+			},
+			{
+				"name": "display_name",
+				"type": "UTF8"
+			},
+			{
+				"name": "product_id",
+				"type": "UTF8"
+			},
+			{
+				"name": "Create",
+				"type": "INT96"
+			}
+		]
+	}
+}

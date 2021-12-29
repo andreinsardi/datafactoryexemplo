@@ -1,0 +1,12 @@
+{
+	"name": "AzureSqlExpen",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlExpense",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	}
+}

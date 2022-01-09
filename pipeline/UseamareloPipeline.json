@@ -48,7 +48,10 @@
 				"outputs": [
 					{
 						"referenceName": "AzureSqlUseamarelo",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"nameTable": "useamarelo"
+						}
 					}
 				]
 			}

@@ -5,8 +5,16 @@
 			"referenceName": "AzureSqlUseAmarelo",
 			"type": "LinkedServiceReference"
 		},
+		"parameters": {
+			"nameTable": {
+				"type": "string"
+			}
+		},
 		"annotations": [],
 		"type": "AzureSqlTable",
-		"schema": []
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo"
+		}
 	}
 }
